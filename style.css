@@ -76,8 +76,7 @@ button {
 }
 
 /* The Close Button */
-.rangeSpanClose,
-.daySpanClose {
+.rangeSpanClose {
     color: #aaaaaa;
     float: right;
     font-size: 28px;
@@ -85,9 +84,7 @@ button {
 }
 
 .rangeSpanClose:hover,
-.rangeSpanClose:focus,
-.daySpanClose:hover,
-.daySpanClose:focus {
+.rangeSpanClose:focus {
     color: #000;
     text-decoration: none;
     cursor: pointer;
