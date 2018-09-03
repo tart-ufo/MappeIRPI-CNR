@@ -18,10 +18,9 @@ body {
 .header li {
     display: inline-block;
     text-align: center;
-    padding-top: 10px;
-    padding-bottom: 10px;
     text-decoration: none;
     width: 33%;
+    height: 100%;
 
     border-style: solid;
     border-top-width: 3px;
@@ -31,12 +30,65 @@ body {
     border-right-width: 0px;
 }
 
-#unselected {
+.unselected {
     background-color: #009624;
-    color: white;
+    color:  white;
+    padding-top:    10px;
+    padding-bottom: 10px;
+    width: 100%
 }
 
-#selected {
+.selected {
     background-color: white;
-    color: black;
+    color:  black;
+    padding-top:    10px;
+    padding-bottom: 10px;
+    width: 100%;
+}
+
+button {
+    border: none;
+}
+
+
+/* The Modal (background) */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1; /* Sit on top */
+    padding-top: 100px; /* Location of the box */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgb(0,0,0); /* Fallback color */
+    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+}
+
+/* Modal Content */
+.modal-content {
+    background-color: #fefefe;
+    margin: auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+}
+
+/* The Close Button */
+.rangeSpanClose,
+.daySpanClose {
+    color: #aaaaaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.rangeSpanClose:hover,
+.rangeSpanClose:focus,
+.daySpanClose:hover,
+.daySpanClose:focus {
+    color: #000;
+    text-decoration: none;
+    cursor: pointer;
 }
