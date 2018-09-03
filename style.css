@@ -1,0 +1,42 @@
+body {
+    margin: 0px 0px 0px 0px;
+}
+
+.header {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: #00c853;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+
+    border-width: 0vw 0vw 0vw 0.5vw;
+    border-color: #00c853;
+    border-style: solid;
+} 
+
+.header li {
+    display: inline-block;
+    text-align: center;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    text-decoration: none;
+    width: 33%;
+
+    border-style: solid;
+    border-top-width: 3px;
+    border-bottom-width: 3px;
+    border-color: #00c853;
+    border-left-width: 0px;
+    border-right-width: 0px;
+}
+
+#unselected {
+    background-color: #009624;
+    color: white;
+}
+
+#selected {
+    background-color: white;
+    color: black;
+}
