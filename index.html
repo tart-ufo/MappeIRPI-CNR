@@ -5,29 +5,92 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Mappa Meteo</title>
-    <link rel="stylesheet" type="text/css" href="style.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: darkslategrey;
+        }
+
+        .btn-group.special {
+            display: flex;
+        }
+        .special .btn {
+            flex: 1;
+            color: white;
+            background-color: #00c853;
+            box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+        }
+        .btn.active {
+            color: black;
+            background-color: white;
+        }
+        .btn.active:hover {
+            z-index: 1
+        }
+
+        .content {
+            height: -webkit-calc(100vh - 4vmax);
+            height: -moz-calc(100vh - 4vmax);
+            height: calc(100vh - 4vmax);
+            vertical-align: middle;
+
+        }
+
+        img {
+            display: block;
+            height: 100%;
+            max-width: 98vw;
+            max-height: 98vw;
+            width: auto;
+            margin: auto;
+            vertical-align: middle;
+        }
+
+        .helper {
+            display: inline-block;
+
+            vertical-align: middle;
+        }
+
+        .collapse {
+            color: black;
+            padding-top: 10px;
+            padding-bottom: 10px;
+            display: inline-block;
+        }
+        .center {
+            text-align: center;
+        }
+    </style>
 </head>
 <body>
-    
-    <!-- The three top buttons -->
-    <ul class="header">
-        <li><button id="24h" class="selected">24h</button></li>
-        <li class="unselected">
-            <input type="date" name="selectedDay" id="selectedDay">
-            <button id="dayBtn">Select day</button>
-        </li>
-        <li><button id="rangeBtn" class="unselected">Select Range</button></li>
-    </ul>
 
-    <!-- The Range Selector Modal -->
-    <div id="rangeModal" class="modal">
-        <!-- Range Modal content -->
-        <div class="modal-content">
-            <span class="rangeSpanClose">&times;</span>
-            <p>Some text in the Range Modal..</p>
-        </div>
+<div class="btn-group special" role="group" aria-label="...">
+    <button type="button" class="btn active">
+        Last 24h
+    </button>
+    <button type="button" class="btn btn-default" data-toggle="collapse" data-target="#demo">
+        Select a day
+    </button>
+    <button type="button" class="btn btn-default" data-toggle="collapse" data-target="#demo">
+        Select a Range
+    </button>
+</div>
+
+<div id="demo" class="collapse">
+    <div class="center">
+        <input type="date" name="selectedDay" id="selectedDay">
+        <button type="button" class="btn btn-success">Confirm</button>
     </div>
+</div>
 
-    <script src="script.js"></script>
+<div class="content">
+    <span class="helper"></span>
+    <img src="o.png" alt="Map">
+</div>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"></script>
 </body>
 </html>

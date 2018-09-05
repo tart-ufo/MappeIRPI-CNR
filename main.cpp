@@ -26,10 +26,10 @@ int main()  {
 
     // create a new color table with the blue color entry
     GDALColorTable blueColorTable(GDALPaletteInterp=GPI_RGB);
-    blueColorTable.SetColorEntry(1, &blueColorEntry);
+//    blueColorTable.SetColorEntry(1, &blueColorEntry);
 
     // set the new color table to the original file
-    originalDataset->GetRasterBand(1)->SetColorTable(blueColorTable());
+//    originalDataset->GetRasterBand(1)->SetColorTable(blueColorTable());
 
     //close the file before exit
     GDALClose(originalDataset);
