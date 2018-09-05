@@ -35,6 +35,8 @@ body {
     color:  white;
     padding-top:    10px;
     padding-bottom: 10px;
+    padding-left: 0;
+    padding-right: 0;
     width: 100%
 }
 
@@ -44,6 +46,8 @@ body {
     padding-top:    10px;
     padding-bottom: 10px;
     width: 100%;
+    padding-left: 0;
+    padding-right: 0;
 }
 
 button {
@@ -90,11 +94,17 @@ button {
     cursor: pointer;
 }
 
-#selectedDay {
-    width: 40%;
-    font-size: larger;
-}
+
 
 @media only screen and (max-width: 654px) {
+    .header li {
+        width: 32.6%;
+    }
 
+    #selectedDay {
+        width: 35%;
+        color: transparent;
+        background-color: aquamarine;
+        border: 0;
+    }
 }
