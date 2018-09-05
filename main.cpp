@@ -25,8 +25,8 @@ int main()  {
     const GDALColorEntry blueColorEntry ={ 0, 157, 255, 0};
 
     // create a new color table with the blue color entry
-    GDALColorTable *blueColorTable(GDALPaletteInterp= GPI_RGB);
-    blueColorTable()->SetColorEntry(1, &blueColorEntry);
+    GDALColorTable blueColorTable(GDALPaletteInterp=GPI_RGB);
+    blueColorTable.SetColorEntry(1, &blueColorEntry);
 
     // set the new color table to the original file
     originalDataset->GetRasterBand(1)->SetColorTable(blueColorTable());

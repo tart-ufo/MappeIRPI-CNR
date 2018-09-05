@@ -20,7 +20,7 @@ body {
     text-align: center;
     text-decoration: none;
     width: 33%;
-    height: 100%;
+    height: 7vh;
 
     border-style: solid;
     border-top-width: 3px;
@@ -30,11 +30,14 @@ body {
     border-right-width: 0;
 }
 
+button {
+    border: none;
+}
+
 .unselected {
     background-color: #009624;
     color:  white;
-    padding-top:    10px;
-    padding-bottom: 10px;
+    height: 90%;
     padding-left: 0;
     padding-right: 0;
     width: 100%
@@ -43,17 +46,11 @@ body {
 .selected {
     background-color: white;
     color:  black;
-    padding-top:    10px;
-    padding-bottom: 10px;
+    height: 90%;
     width: 100%;
     padding-left: 0;
     padding-right: 0;
 }
-
-button {
-    border: none;
-}
-
 
 /* The Modal (background) */
 .modal {
@@ -96,15 +93,31 @@ button {
 
 
 
-@media only screen and (max-width: 654px) {
+@media only screen and (max-width: 700px) {
     .header li {
         width: 32.6%;
     }
 
     #selectedDay {
         width: 35%;
+        height: 70%;
         color: transparent;
-        background-color: aquamarine;
+        background-color: limegreen;
         border: 0;
     }
+}
+
+@media only screen and (max-width: 297px) {
+    .header li {
+        width: 32.2%;
+    }
+
+    #selectedDay {
+        width: 35%;
+        height: 70%;
+        color: transparent;
+        background-color: limegreen;
+        border: 0;
+    }
+
 }
