@@ -1,20 +1,38 @@
 #include <gdal_priv.h>
 #include <cpl_conv.h>
 #include <iostream>
+#include <gdal.h>
+
+/**
+ * Manipulate a GeoTiff image with a single grayscale band
+ * to an blue-tinted one
+ * @return WIP
+ */
 
 int main()  {
-        const char *input = "/home/giovanni/Desktop/expected.tif";
-        const char *output = "/home/giovanni/Desktop/result.png";
 
-        GDALAllRegister();
+    //Register all known driver
+    GDALAllRegister();
 
-        GDALDataset  *oldDataSet;
-        GDALDriver *outputPNG;
-        outputPNG = GetGDALDriverManager()->GetDriverByName("PNG");
+    //open test input
+    const char *originalTif = "/originalDataset.tif";
+    auto originalDataset  = (GDALDataset *) GDALOpen(originalTif, GA_Update);
 
-        oldDataSet  = (GDALDataset *) GDALOpen(input, GA_ReadOnly );
+    // set the color interpretation to CGI_BlueBand, an enum for blue band
+    originalDataset->GetRasterBand(1)->SetColorInterpretation(GCI_BlueBand);
 
-        std::cout << "ora va cazzo";
+    // create a new color entry for the new table
+    const GDALColorEntry blueColorEntry ={ 0, 157, 255, 0};
+
+    // create a new color table with the blue color entry
+    GDALColorTable *blueColorTable(GDALPaletteInterp= GPI_RGB);
+    blueColorTable()->SetColorEntry(1, &blueColorEntry);
+
+    // set the new color table to the original file
+    originalDataset->GetRasterBand(1)->SetColorTable(blueColorTable());
+
+    //close the file before exit
+    GDALClose(originalDataset);
 
     return 0;
 }

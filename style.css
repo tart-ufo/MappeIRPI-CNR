@@ -1,5 +1,5 @@
 body {
-    margin: 0px 0px 0px 0px;
+    margin: 0 0 0 0;
 }
 
 .header {
@@ -10,7 +10,7 @@ body {
     background-color: #00c853;
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 
-    border-width: 0vw 0vw 0vw 0.5vw;
+    border-width: 0 0 0 0.5vw;
     border-color: #00c853;
     border-style: solid;
 } 
@@ -26,8 +26,8 @@ body {
     border-top-width: 3px;
     border-bottom-width: 3px;
     border-color: #00c853;
-    border-left-width: 0px;
-    border-right-width: 0px;
+    border-left-width: 0;
+    border-right-width: 0;
 }
 
 .unselected {
@@ -88,4 +88,13 @@ button {
     color: #000;
     text-decoration: none;
     cursor: pointer;
+}
+
+#selectedDay {
+    width: 40%;
+    font-size: larger;
+}
+
+@media only screen and (max-width: 654px) {
+
 }
