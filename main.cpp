@@ -4,19 +4,26 @@
 #include <sstream>
 #include <filesystem>
 
-namespace fs = std::filesystem;
-using namespace std;
-
 /**
  * Generate colored, upscaled, temporized map, with the Italian alert zones
  * and an Italy background, animated Gifs.
  */
 
-// Converts UTC time string to a time_t value.
-time_t toTime(istringstream dateTime) {
+using namespace std;
+namespace fs = std::filesystem;
+
+
+/**
+ * Converts UTC time string to a tm struct.
+ * To change the folders name set the format below @line 26
+ * for more information check this table @link http://www.cplusplus.com/reference/ctime/strftime/
+ *
+ * @param dateTime the string to convert
+ */
+tm toTime(std::istringstream dateTime) {
     struct tm tm{};
     dateTime >>get_time(&tm, "%Y%m%d_%H");
-    return mktime(&tm); //non va bene perché usa la timezone di sistema
+    return tm;
 }
 
 int main(int argc, char* argv[]) {
@@ -25,12 +32,9 @@ int main(int argc, char* argv[]) {
         std::cout << argv[i];
     }
 
-    std::time_t startDate = toTime(std::istringstream(argv[1]));
-    std::time_t endDate = toTime(std::istringstream(argv[1]));
+    tm startDate = toTime(std::istringstream(argv[1]));
+    tm endDate = toTime(std::istringstream(argv[1]));
 
-
-
-    std::cout << ctime(&startDate);
 
     return 0;
 }
