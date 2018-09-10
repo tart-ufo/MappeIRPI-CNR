@@ -1,8 +1,8 @@
 #include <ctime>
+#include <time.h>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
-#include <filesystem>
 #include <string>
 #include <ImageMagick-7/Magick++.h>
 #include <gdal_priv.h>
@@ -12,9 +12,9 @@
  * and an Italy background, animated Gifs.
  */
 
-namespace fs = std::filesystem;
 
 const char * DATE_FORMAT = "%Y%m%d_%H";
+
 
 /**
  * Converts UTC time string to a tm struct.
@@ -32,9 +32,9 @@ tm toTime(std::stringstream dateTime) {
 int main(int argc, char* argv[]) {
 
     std::string base_path = "/home/giovanni/Desktop/dati";
-    char dirName[12];
+    std::string dirName;
     tm startDate = toTime(std::stringstream(argv[1]));
-    tm endDate = toTime(std::stringstream(argv[2]));
+    const tm endDate = toTime(std::stringstream(argv[2]));
 
     int diffHours = (int) std::difftime(mktime(&startDate), mktime(&endDate)) / 3600;
 
@@ -44,8 +44,8 @@ int main(int argc, char* argv[]) {
 
     for (int i = 0; i < diffHours; ++i) {
 
-        strftime(dirName, sizeof(dirName), DATE_FORMAT, startDate);
-        originalDataset[i] = (GDALDataset*) GDALOpen("", GA_ReadOnly);
+        strftime(strdup(dirName.c_str()), dirName.size(), DATE_FORMAT, &startDate);
+        originalDataset[i] = (GDALDataset*) GDALOpen(base_path.append("/" + dirName).c_str(), GA_ReadOnly);
 
     }
 
