@@ -46,6 +46,7 @@ int main(int argc, char* argv[]) {
 
         strftime(strdup(dirName.c_str()), dirName.size(), DATE_FORMAT, &startDate);
         originalDataset[i] = (GDALDataset*) GDALOpen(base_path.append("/" + dirName).c_str(), GA_ReadOnly);
+        originalDataset[i]->GetDriver()->CreateCopy("/home/giovanni/Desktop/g.tif", newDataset, );
 
     }
 
