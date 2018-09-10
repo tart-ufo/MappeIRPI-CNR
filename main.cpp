@@ -12,9 +12,7 @@
  * and an Italy background, animated Gifs.
  */
 
-
 const char * DATE_FORMAT = "%Y%m%d_%H";
-
 
 /**
  * Converts UTC time string to a tm struct.
@@ -34,19 +32,20 @@ int main(int argc, char* argv[]) {
     std::string base_path = "/home/giovanni/Desktop/dati";
     std::string dirName;
     tm startDate = toTime(std::stringstream(argv[1]));
-    const tm endDate = toTime(std::stringstream(argv[2]));
+    tm endDate = toTime(std::stringstream(argv[2]));
 
     int diffHours = (int) std::difftime(mktime(&startDate), mktime(&endDate)) / 3600;
 
     GDALAllRegister();
     GDALDataset *originalDataset[diffHours];
     GDALDataset *newDataset[diffHours];
+    GDALDriver* driver = GetGDALDriverManager()->GetDriverByName("GTiff");
 
     for (int i = 0; i < diffHours; ++i) {
 
         strftime(strdup(dirName.c_str()), dirName.size(), DATE_FORMAT, &startDate);
         originalDataset[i] = (GDALDataset*) GDALOpen(base_path.append("/" + dirName).c_str(), GA_ReadOnly);
-        originalDataset[i]->GetDriver()->CreateCopy("/home/giovanni/Desktop/g.tif", newDataset, );
+//        driver->CreateCopy(outputpath)
 
     }
 
