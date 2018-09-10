@@ -5,15 +5,16 @@
 #include <filesystem>
 #include <string>
 #include <ImageMagick-7/Magick++.h>
+#include <gdal_priv.h>
 
 /**
  * Generate colored, upscaled, temporized map, with the Italian alert zones
  * and an Italy background, animated Gifs.
  */
 
-using namespace std;
 namespace fs = std::filesystem;
 
+const char * DATE_FORMAT = "%Y%m%d_%H";
 
 /**
  * Converts UTC time string to a tm struct.
@@ -24,17 +25,29 @@ namespace fs = std::filesystem;
  */
 tm toTime(std::stringstream dateTime) {
     struct tm tm{};
-    dateTime >> get_time(&tm, "%Y%m%d_%H");
+    dateTime >> std::get_time(&tm, DATE_FORMAT);
     return tm;
 }
 
 int main(int argc, char* argv[]) {
 
+    std::string base_path = "/home/giovanni/Desktop/dati";
+    char dirName[12];
     tm startDate = toTime(std::stringstream(argv[1]));
     tm endDate = toTime(std::stringstream(argv[2]));
 
+    int diffHours = (int) std::difftime(mktime(&startDate), mktime(&endDate)) / 3600;
 
+    GDALAllRegister();
+    GDALDataset *originalDataset[diffHours];
+    GDALDataset *newDataset[diffHours];
 
+    for (int i = 0; i < diffHours; ++i) {
+
+        strftime(dirName, sizeof(dirName), DATE_FORMAT, startDate);
+        originalDataset[i] = (GDALDataset*) GDALOpen("", GA_ReadOnly);
+
+    }
 
     return 0;
 }
