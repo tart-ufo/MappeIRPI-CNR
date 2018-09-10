@@ -3,6 +3,8 @@
 #include <iostream>
 #include <sstream>
 #include <filesystem>
+#include <string>
+#include <ImageMagick-7/Magick++.h>
 
 /**
  * Generate colored, upscaled, temporized map, with the Italian alert zones
@@ -20,20 +22,18 @@ namespace fs = std::filesystem;
  *
  * @param dateTime the string to convert
  */
-tm toTime(std::istringstream dateTime) {
+tm toTime(std::stringstream dateTime) {
     struct tm tm{};
-    dateTime >>get_time(&tm, "%Y%m%d_%H");
+    dateTime >> get_time(&tm, "%Y%m%d_%H");
     return tm;
 }
 
 int main(int argc, char* argv[]) {
 
-    for (int i = 0; i < argc; ++i) {
-        std::cout << argv[i];
-    }
+    tm startDate = toTime(std::stringstream(argv[1]));
+    tm endDate = toTime(std::stringstream(argv[2]));
 
-    tm startDate = toTime(std::istringstream(argv[1]));
-    tm endDate = toTime(std::istringstream(argv[1]));
+
 
 
     return 0;
