@@ -26,7 +26,8 @@ static std::string BASE_PATH = "/home/giovanni/Desktop/dati";
  */
 tm toTime(std::stringstream dateTime) {
     struct tm tm{};
-    dateTime >> std::get_time(&tm, "%Y%m%d_%H");
+    dateTime >> std::get_time(&tm, DATE_FORMAT.c_str());
+//    tm.tm_isdst = -1;
     return tm;
 }
 
@@ -45,11 +46,11 @@ int main(int argc, char* argv[]) {
 
     for (int i = 0; i < diffHours; ++i) {
         strftime(dirName, 13, DATE_FORMAT.c_str(), &startDate);
-        fs::create_directory();
-        std::cout << "\n"s + dirName;
-        originalDataset[0] = (GDALDataset *) GDALOpen((BASE_PATH + "/"s + dirName + PREVISTE).c_str(), GA_ReadOnly);
-        newDataset[0] = driver->CreateCopy((TEMP_PATH + dirName + PREVISTE).c_str(), originalDataset[0], FALSE, nullptr,
+        fs::create_directory(fs::path(TEMP_PATH + dirName));
+        originalDataset[i] = (GDALDataset *) GDALOpen((BASE_PATH + "/"s + dirName + PREVISTE).c_str(), GA_ReadOnly);
+        newDataset[i] = driver->CreateCopy((TEMP_PATH + dirName + PREVISTE).c_str(), originalDataset[0], FALSE, nullptr,
                                            nullptr, nullptr);
+
 
     }
 
