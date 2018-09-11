@@ -15,7 +15,7 @@ namespace fs = std::filesystem;
 static std::string DATE_FORMAT = "%Y%m%d_%H";
 static std::string TEMP_PATH = "/home/giovanni/Desktop/TEMP/";
 static std::string PREVISTE = "/cf_psm.tif";
-static std::string BASE_PATH = "/home/giovanni/Desktop/dati";
+static std::string BASE_PATH = "/home/giovanni/Desktop/dati/";
 
 /**
  * Converts UTC time string to a tm struct.
@@ -44,14 +44,15 @@ int main(int argc, char* argv[]) {
     GDALDataset *newDataset[diffHours];
     GDALDriver* driver = GetGDALDriverManager()->GetDriverByName("GTiff");
 
+    time_t date;
     for (int i = 0; i < diffHours; ++i) {
-        strftime(dirName, 13, DATE_FORMAT.c_str(), &startDate);
+        date = mktime(&startDate);
+        strftime(dirName, 13, DATE_FORMAT.c_str(), gmtime(&date));
         fs::create_directory(fs::path(TEMP_PATH + dirName));
-        originalDataset[i] = (GDALDataset *) GDALOpen((BASE_PATH + "/"s + dirName + PREVISTE).c_str(), GA_ReadOnly);
+        originalDataset[i] = (GDALDataset *) GDALOpen((BASE_PATH + dirName + PREVISTE).c_str(), GA_ReadOnly);
         newDataset[i] = driver->CreateCopy((TEMP_PATH + dirName + PREVISTE).c_str(), originalDataset[0], FALSE, nullptr,
                                            nullptr, nullptr);
-
-
+        startDate.tm_hour += 1;
     }
 
     for (int i = 0; i < diffHours; ++i) {
