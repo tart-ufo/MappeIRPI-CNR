@@ -1,18 +1,21 @@
 #include <ctime>
-#include <time.h>
 #include <iomanip>
-#include <iostream>
-#include <sstream>
-#include <string>
 #include <ImageMagick-7/Magick++.h>
 #include <gdal_priv.h>
+#include <filesystem>
 
 /**
  * Generate colored, upscaled, temporized map, with the Italian alert zones
  * and an Italy background, animated Gifs.
  */
 
-const char * DATE_FORMAT = "%Y%m%d_%H";
+using namespace std::string_literals;
+namespace fs = std::filesystem;
+
+static std::string DATE_FORMAT = "%Y%m%d_%H";
+static std::string TEMP_PATH = "/home/giovanni/Desktop/TEMP/";
+static std::string PREVISTE = "/cf_psm.tif";
+static std::string BASE_PATH = "/home/giovanni/Desktop/dati";
 
 /**
  * Converts UTC time string to a tm struct.
@@ -23,18 +26,17 @@ const char * DATE_FORMAT = "%Y%m%d_%H";
  */
 tm toTime(std::stringstream dateTime) {
     struct tm tm{};
-    dateTime >> std::get_time(&tm, DATE_FORMAT);
+    dateTime >> std::get_time(&tm, "%Y%m%d_%H");
     return tm;
 }
 
 int main(int argc, char* argv[]) {
 
-    std::string base_path = "/home/giovanni/Desktop/dati";
-    std::string dirName;
+    char dirName[13];
     tm startDate = toTime(std::stringstream(argv[1]));
     tm endDate = toTime(std::stringstream(argv[2]));
 
-    int diffHours = (int) std::difftime(mktime(&startDate), mktime(&endDate)) / 3600;
+    int diffHours = (int) std::difftime(mktime(&endDate), mktime(&startDate)) / 3600;
 
     GDALAllRegister();
     GDALDataset *originalDataset[diffHours];
@@ -42,12 +44,19 @@ int main(int argc, char* argv[]) {
     GDALDriver* driver = GetGDALDriverManager()->GetDriverByName("GTiff");
 
     for (int i = 0; i < diffHours; ++i) {
-
-        strftime(strdup(dirName.c_str()), dirName.size(), DATE_FORMAT, &startDate);
-        originalDataset[i] = (GDALDataset*) GDALOpen(base_path.append("/" + dirName).c_str(), GA_ReadOnly);
-//        driver->CreateCopy(outputpath)
+        strftime(dirName, 13, DATE_FORMAT.c_str(), &startDate);
+        fs::create_directory();
+        std::cout << "\n"s + dirName;
+        originalDataset[0] = (GDALDataset *) GDALOpen((BASE_PATH + "/"s + dirName + PREVISTE).c_str(), GA_ReadOnly);
+        newDataset[0] = driver->CreateCopy((TEMP_PATH + dirName + PREVISTE).c_str(), originalDataset[0], FALSE, nullptr,
+                                           nullptr, nullptr);
 
     }
+
+    for (int i = 0; i < diffHours; ++i) {
+        GDALClose(newDataset[i]);
+    }
+
 
     return 0;
 }
