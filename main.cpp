@@ -37,7 +37,7 @@ int main(int argc, char* argv[]) {
     tm startDate = toTime(std::stringstream(argv[1]));
     tm endDate = toTime(std::stringstream(argv[2]));
 
-    int diffHours = (int) std::difftime(mktime(&endDate), mktime(&startDate)) / 3600;
+    int diffHours = (int) std::difftime(timegm(&endDate), timegm(&startDate)) / 3600;
 
     GDALAllRegister();
     GDALDataset *originalDataset[diffHours];
@@ -46,7 +46,7 @@ int main(int argc, char* argv[]) {
 
     time_t date;
     for (int i = 0; i < diffHours; ++i) {
-        date = mktime(&startDate);
+        date = timegm(&startDate);
         strftime(dirName, 13, DATE_FORMAT.c_str(), gmtime(&date));
         fs::create_directory(fs::path(TEMP_PATH + dirName));
         originalDataset[i] = (GDALDataset *) GDALOpen((BASE_PATH + dirName + PREVISTE).c_str(), GA_ReadOnly);
