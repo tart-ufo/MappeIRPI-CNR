@@ -27,7 +27,6 @@ static std::string COLOR = "/colors.txt";
 tm toTime(std::stringstream dateTime) {
     struct tm newTm{};
     dateTime >> std::get_time(&newTm, DATE_FORMAT.c_str());
-//    tm.tm_isdst = -1;
     return newTm;
 }
 
@@ -44,9 +43,9 @@ int main(int argc, char *argv[]) {
     GDALDriver *memDriver = GetGDALDriverManager()->GetDriverByName("MEM");
     GDALDriver *gtiffDriver = GetGDALDriverManager()->GetDriverByName("GTiff");
 
+    char *cose[] = {const_cast<char *>("-alpha"), NULL};
+    GDALDEMProcessingOptions *options = GDALDEMProcessingOptionsNew(cose, NULL);
 
-    GDALDEMProcessingOptions options(cose, NULL);
-    GDALDEMProcessingOptionsFree(&options);
     int g;
     time_t date;
     for (int i = 0; i < diffHours; ++i) {
@@ -55,19 +54,15 @@ int main(int argc, char *argv[]) {
         fs::create_directory(fs::path(TEMP_PATH + dirName));
 
         originalDataset[i] = (GDALDataset *) GDALOpen((BASE_PATH + dirName + PREVISTE).c_str(), GA_ReadOnly);
-        newDataset[i] = memDriver->CreateCopy((TEMP_PATH + dirName + PREVISTE).c_str(), originalDataset[i], FALSE,
-                                              nullptr,
-                                              nullptr, nullptr);
-        newDataset[i] = (GDALDataset *) GDALDEMProcessingOptions((TEMP_PATH + dirName + PREVISTE).c_str(),
-                                                                 (GDALDatasetH *) originalDataset[i],
-                                                                 "color-relief",
-                                                                 COLOR.c_str(), options, &g);
+        newDataset[i] = (GDALDataset *) GDALDEMProcessing((TEMP_PATH + dirName + PREVISTE).c_str(),
+                                                          originalDataset[i],
+                                                          "color-relief",
+                                                          "/home/giovanni/Desktop/colors.txt", options, &g);
+
         startDate.tm_hour += 1;
-    }
-
-    for (int i = 0; i < diffHours; ++i) {
         GDALClose(newDataset[i]);
+        GDALClose(originalDataset[i]);
     }
-
+    GDALDEMProcessingOptionsFree(options);
     return 0;
 }
