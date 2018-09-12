@@ -19,16 +19,14 @@ static std::string BASE_PATH = "/home/giovanni/Desktop/dati/";
 
 /**
  * Converts UTC time string to a tm struct.
- * To change the folders name set the format below @line 26
- * for more information check this table @link http://www.cplusplus.com/reference/ctime/strftime/
- *
  * @param dateTime the string to convert
+ * @return
  */
 tm toTime(std::stringstream dateTime) {
-    struct tm tm{};
-    dateTime >> std::get_time(&tm, DATE_FORMAT.c_str());
+    struct tm newTm{};
+    dateTime >> std::get_time(&newTm, DATE_FORMAT.c_str());
 //    tm.tm_isdst = -1;
-    return tm;
+    return newTm;
 }
 
 int main(int argc, char* argv[]) {
