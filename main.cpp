@@ -43,10 +43,11 @@ int main(int argc, char *argv[]) {
 
     GDALDriver *memDriver = GetGDALDriverManager()->GetDriverByName("MEM");
     GDALDriver *gtiffDriver = GetGDALDriverManager()->GetDriverByName("GTiff");
-    GDALDEMProcessingOptionsForBinary
-    GDALDEMProcessingOptions
-    GDALDEMProcessingOptionsFree();
 
+
+    GDALDEMProcessingOptions options(cose, NULL);
+    GDALDEMProcessingOptionsFree(&options);
+    int g;
     time_t date;
     for (int i = 0; i < diffHours; ++i) {
         date = timegm(&startDate);
@@ -60,8 +61,7 @@ int main(int argc, char *argv[]) {
         newDataset[i] = (GDALDataset *) GDALDEMProcessingOptions((TEMP_PATH + dirName + PREVISTE).c_str(),
                                                                  (GDALDatasetH *) originalDataset[i],
                                                                  "color-relief",
-                                                                 COLOR.c_str(), ,
-        );
+                                                                 COLOR.c_str(), options, &g);
         startDate.tm_hour += 1;
     }
 
