@@ -62,6 +62,7 @@ int main(int argc, char *argv[]) {
         startDate.tm_hour += 1;
         GDALClose(newDataset[i]);
         GDALClose(originalDataset[i]);
+
     }
     GDALDEMProcessingOptionsFree(options);
     return 0;
