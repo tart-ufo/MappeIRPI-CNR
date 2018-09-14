@@ -17,7 +17,7 @@ static std::string DATE_FORMAT = "%Y%m%d_%H";
 static std::string TEMP_PATH = "/home/giovanni/Desktop/TEMP/";
 static std::string PREVISTE = "/cf_psm.tif";
 static std::string BASE_PATH = "/home/giovanni/Desktop/dati/";
-static std::string COLOR = "/colors.txt";
+static std::string COLORS = "colors.txt";
 
 /**
  * Converts UTC time string to a tm struct.
@@ -30,8 +30,15 @@ tm toTime(std::stringstream dateTime) {
     return newTm;
 }
 
+void to3857(double *x, double *y) {
+    OGRSpatialReference sourceSRS, targetSRS;
+    sourceSRS.importFromEPSG(4326);
+    targetSRS.importFromEPSG(3857);
+    OGRCreateCoordinateTransformation(&sourceSRS, &targetSRS)->Transform(1, x, y);
+}
+
 int main(int argc, char *argv[]) {
-    char dirName[13];
+    char dirName[12];
     tm startDate = toTime(std::stringstream(argv[1]));
     tm endDate = toTime(std::stringstream(argv[2]));
     int diffHours = (int) std::difftime(timegm(&endDate), timegm(&startDate)) / 3600;
@@ -50,14 +57,14 @@ int main(int argc, char *argv[]) {
     time_t date;
     for (int i = 0; i < diffHours; ++i) {
         date = timegm(&startDate);
-        strftime(dirName, 13, DATE_FORMAT.c_str(), gmtime(&date));
+        strftime(dirName, 12, DATE_FORMAT.c_str(), gmtime(&date));
         fs::create_directory(fs::path(TEMP_PATH + dirName));
 
         originalDataset[i] = (GDALDataset *) GDALOpen((BASE_PATH + dirName + PREVISTE).c_str(), GA_ReadOnly);
         newDataset[i] = (GDALDataset *) GDALDEMProcessing((TEMP_PATH + dirName + PREVISTE).c_str(),
                                                           originalDataset[i],
                                                           "color-relief",
-                                                          "/home/giovanni/Desktop/colors.txt", options, &g);
+                                                          COLORS.c_str(), options, &g);
 
         startDate.tm_hour += 1;
         GDALClose(newDataset[i]);
