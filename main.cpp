@@ -30,6 +30,11 @@ tm toTime(std::stringstream dateTime) {
     return newTm;
 }
 
+/**
+ * Covert a pair of 4326 coordinates to 3857
+ * @param x longitudes
+ * @param y latitudes
+ */
 void to3857(double *x, double *y) {
     OGRSpatialReference sourceSRS, targetSRS;
     sourceSRS.importFromEPSG(4326);
@@ -50,8 +55,8 @@ int main(int argc, char *argv[]) {
     GDALDriver *memDriver = GetGDALDriverManager()->GetDriverByName("MEM");
     GDALDriver *gtiffDriver = GetGDALDriverManager()->GetDriverByName("GTiff");
 
-    char *optionForDEM[] = {const_cast<char *>("-alpha"), NULL};
-    GDALDEMProcessingOptions *options = GDALDEMProcessingOptionsNew(optionForDEM, NULL);
+    char *optionForDEM[] = {const_cast<char *>("-alpha"), nullptr};
+    GDALDEMProcessingOptions *options = GDALDEMProcessingOptionsNew(optionForDEM, nullptr);
 
     int g;
     time_t date;
@@ -65,7 +70,6 @@ int main(int argc, char *argv[]) {
                                                           originalDataset[i],
                                                           "color-relief",
                                                           COLORS.c_str(), options, &g);
-
         startDate.tm_hour += 1;
         GDALClose(newDataset[i]);
         GDALClose(originalDataset[i]);
