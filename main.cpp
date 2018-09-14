@@ -50,8 +50,8 @@ int main(int argc, char *argv[]) {
     GDALDriver *memDriver = GetGDALDriverManager()->GetDriverByName("MEM");
     GDALDriver *gtiffDriver = GetGDALDriverManager()->GetDriverByName("GTiff");
 
-    char *cose[] = {const_cast<char *>("-alpha"), NULL};
-    GDALDEMProcessingOptions *options = GDALDEMProcessingOptionsNew(cose, NULL);
+    char *optionForDEM[] = {const_cast<char *>("-alpha"), NULL};
+    GDALDEMProcessingOptions *options = GDALDEMProcessingOptionsNew(optionForDEM, NULL);
 
     int g;
     time_t date;
