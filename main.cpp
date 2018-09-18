@@ -14,7 +14,8 @@ using namespace std::string_literals;
 namespace fs = std::filesystem;
 using namespace std::chrono;
 
-static std::string DATE_FORMAT = "%Y%m%d_%H";
+static std::string DIR_FORMAT = "%Y%m%d_%H";
+static std::string DATE_FORMAT = "%Y/%m/%d H%H UTF-0 ";
 static std::string TEMP_PATH = "/home/giovanni/Desktop/TEMP/";
 static std::string PREVISTE = "/cf_psm.tif";
 static std::string BASE_PATH = "/home/giovanni/Desktop/dati/";
@@ -27,7 +28,7 @@ static std::string COLORS = "colors.txt";
  */
 tm toTime(std::stringstream dateTime) {
     struct tm newTm{};
-    dateTime >> std::get_time(&newTm, DATE_FORMAT.c_str());
+    dateTime >> std::get_time(&newTm, DIR_FORMAT.c_str());
     return newTm;
 }
 
@@ -46,21 +47,19 @@ void to3857(double *x, double *y) {
 int main(int argc, char *argv[]) {
     high_resolution_clock::time_point t1 = high_resolution_clock::now();
     char dirName[12];
+    char timestamp[22];
     tm startDate = toTime(std::stringstream(argv[1]));
     tm endDate = toTime(std::stringstream(argv[2]));
     int diffHours = (int) std::difftime(timegm(&endDate), timegm(&startDate)) / 3600;
 
-    Magick::InitializeMagick("");
     GDALAllRegister();
     GDALDataset *originalDataset;
     GDALDataset *newDataset;
 
     Magick::Image sfondo;
     Magick::Image za;
-    sfondo.read("/home/giovanni/CLionProjects/MappeIRPI-CNR/sfondo.png");
+    sfondo.read("/home/giovanni/CLionProjects/MappeIRPI-CNR/sfondo.mpc");
     za.read("/home/giovanni/CLionProjects/MappeIRPI-CNR/ZA.mpc");
-    Magick::Blob bSfondo;
-    sfondo.write(&bSfondo);
 
     char *optionForDEM[] = {const_cast<char *>("-alpha"), nullptr};
     GDALDEMProcessingOptions *options = GDALDEMProcessingOptionsNew(optionForDEM, nullptr);
@@ -70,8 +69,7 @@ int main(int argc, char *argv[]) {
     time_t date;
     for (int i = 0; i < diffHours; ++i) {
         date = timegm(&startDate);
-        startDate.tm_hour += 1;
-        strftime(dirName, 12, DATE_FORMAT.c_str(), gmtime(&date));
+        strftime(dirName, 12, DIR_FORMAT.c_str(), gmtime(&date));
         fs::create_directory(fs::path(TEMP_PATH + dirName));
 
         originalDataset = (GDALDataset *) GDALOpen((BASE_PATH + dirName + PREVISTE).c_str(), GA_ReadOnly);
@@ -82,14 +80,20 @@ int main(int argc, char *argv[]) {
         GDALClose(newDataset);
         Magick::Image tif;
         tif.read(TEMP_PATH + dirName + PREVISTE);
-//        tif.zoom("2218x2275");
-        tif.scale(Magick::Geometry(1083, 1166));
+        tif.zoom("1083x1166");
+//        tif.scale(Magick::Geometry(1083, 1166));
 
-        Magick::Image foto;
-        foto.read(bSfondo);
-        foto.composite(tif, 0, 0, Magick::OverCompositeOp);
-        foto.composite(za, 0, 0, Magick::OverCompositeOp);
-        foto.write(TEMP_PATH + dirName + "/ppn2.png");
+        tif.composite(sfondo, 0, 0, Magick::DstOverCompositeOp);
+        tif.composite(za, 0, 0, Magick::OverCompositeOp);
+
+        tif.font("/usr/share/fonts/OTF/SFMono-Bold.otf");
+        tif.fillColor("White");
+        tif.fontPointsize(37);
+        strftime(timestamp, 22, DATE_FORMAT.c_str(), gmtime(&date));
+        tif.annotate(timestamp, Magick::NorthEastGravity);
+        tif.write(TEMP_PATH + dirName + "/ppn2.png");
+
+        startDate.tm_hour += 1;
     }
 
     GDALClose(originalDataset);
