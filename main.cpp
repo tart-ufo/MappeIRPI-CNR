@@ -78,7 +78,9 @@ int main(int argc, char *argv[]) {
 
     int g;
     time_t date;
-    for (int i = 0; i < diffHours; ++i) {
+    int i;
+
+    for (i = 0; i < diffHours; ++i) {
         //start of gdal processing block
         date = timegm(&startDate);
         strftime(dirName, 12, DIR_FORMAT.c_str(), gmtime(&date));
