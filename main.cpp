@@ -18,7 +18,7 @@ using namespace std::chrono;
 using namespace vips;
 
 static std::string DIR_FORMAT = "%Y%m%d_%H";
-static std::string DATE_FORMAT = "%Y/%m/%d H%H UTF-0 ";
+static std::string DATE_FORMAT = "%Y/%m/%d H%H UTF-0";
 static std::string O_FORMAT = "%Y%m%d_%H.tif";
 static std::string TEMP_PATH = "TEMP/";
 static std::string PREVISTE = "/cf_psm.tif";
@@ -95,20 +95,22 @@ int main(int argc, char *argv[]) {
                                                        "color-relief",
                                                        COLORI.c_str(), options, &gdalReturnCode);
         GDALClose(newDataset); //write the processed tif to disk
-//        VImage frame = VImage::new_memory();
+
         VImage tif = VImage::new_from_file((TEMP_PATH + std::to_string(j) + "cf_psm.tif").c_str(),
                                            VImage::option()->set("access", VIPS_ACCESS_SEQUENTIAL));
 
         tif = tif.resize(3, VImage::option()->set("kernel", VIPS_KERNEL_LINEAR));
         tif = sfondo.composite(tif, VIPS_BLEND_MODE_OVER);
         tif = tif.composite(za, VIPS_BLEND_MODE_OVER);
-
-        strftime(timestampString, 12, DATE_FORMAT.c_str(), gmtime(&date));
-
-        tif.write_to_file((TEMP_PATH + std::to_string(j) + "EDITcf_psm.png").c_str());
+        strftime(timestampString, 22, DATE_FORMAT.c_str(), gmtime(&date));
+        VImage testo = VImage::text(timestampString, VImage::option()->set("height", 25)
+                ->set("width", 945)
+                ->set("font", "SFmono")
+                ->set("fontfile", "/usr/share/fonts/OTF/SFMono-Bold.otf"));
+        tif = testo.composite(tif, VIPS_BLEND_MODE_DEST_OVER);
+        tif.write_to_file((TEMP_PATH + std::to_string(j) + "VIPScf_psm.tif").c_str());
         startDate.tm_hour += 1;
     }
-
 
 /**********************************************************************************************************************
 *   close vips, gdal and free memory
