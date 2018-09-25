@@ -95,18 +95,17 @@ int main(int argc, char *argv[]) {
                                                        "color-relief",
                                                        COLORI.c_str(), options, &gdalReturnCode);
         GDALClose(newDataset); //write the processed tif to disk
-        VImage frame = VImage::new_memory();
+//        VImage frame = VImage::new_memory();
         VImage tif = VImage::new_from_file((TEMP_PATH + std::to_string(j) + "cf_psm.tif").c_str(),
                                            VImage::option()->set("access", VIPS_ACCESS_SEQUENTIAL));
-        tif = tif.resize(3);
-//        tif = tif.composite(tif, VIPS_BLEND_MODE_DEST_OVER);
-        tif = tif.composite(sfondo, VIPS_BLEND_MODE_DEST_OVER);
+
+        tif = tif.resize(3, VImage::option()->set("kernel", VIPS_KERNEL_LINEAR));
+        tif = sfondo.composite(tif, VIPS_BLEND_MODE_OVER);
         tif = tif.composite(za, VIPS_BLEND_MODE_OVER);
 
-
 //        strftime(timestampString, 12, DATE_FORMAT.c_str(), gmtime(&date));
-//        VImage timeStampImage = vips_image_new_memory();
-        tif.write_to_file((TEMP_PATH + std::to_string(j) + "EDITcf_psm.tif").c_str());
+
+        tif.write_to_file((TEMP_PATH + std::to_string(j) + "EDITcf_psm.png").c_str());
         startDate.tm_hour += 1;
     }
 
