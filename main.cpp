@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
         tif = sfondo.composite(tif, VIPS_BLEND_MODE_OVER);
         tif = tif.composite(za, VIPS_BLEND_MODE_OVER);
 
-//        strftime(timestampString, 12, DATE_FORMAT.c_str(), gmtime(&date));
+        strftime(timestampString, 12, DATE_FORMAT.c_str(), gmtime(&date));
 
         tif.write_to_file((TEMP_PATH + std::to_string(j) + "EDITcf_psm.png").c_str());
         startDate.tm_hour += 1;
