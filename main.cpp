@@ -4,8 +4,8 @@
 #include <filesystem>
 #include <gdal_utils.h>
 #include <iostream>
-#include <ImageMagick-7/Magick++.h>
 #include <omp.h>
+#include <vips/vips8>
 
 /**
  * Generate colored, upscaled, temporized map, with the Italian alert zones
@@ -15,13 +15,17 @@
 using namespace std::string_literals;
 namespace fs = std::filesystem;
 using namespace std::chrono;
+using namespace vips;
 
 static std::string DIR_FORMAT = "%Y%m%d_%H";
 static std::string DATE_FORMAT = "%Y/%m/%d H%H UTF-0 ";
+static std::string O_FORMAT = "%Y%m%d_%H.tif";
 static std::string TEMP_PATH = "TEMP/";
 static std::string PREVISTE = "/cf_psm.tif";
-static std::string BASE_PATH = "dati/";
-static std::string COLORI = "colors.txt";
+static std::string BASE_PATH = "/home/giovanni/Desktop/dati/";
+static std::string COLORI = "/home/giovanni/CLionProjects/MappeIRPI-CNR/colors.txt";
+static std::string SFONDO = "/home/giovanni/CLionProjects/MappeIRPI-CNR/sfondo.jpg";
+static std::string ZA = "/home/giovanni/CLionProjects/MappeIRPI-CNR/ZA.png";
 
 /**
  * Converts UTC time string to a tm struct.
@@ -46,10 +50,15 @@ void to3857(double *x, double *y) {
     OGRCreateCoordinateTransformation(&sourceSRS, &targetSRS)->Transform(1, x, y);
 }
 
+
 int main(int argc, char *argv[]) {
 
+    if (VIPS_INIT(argv[0]))
+        vips_error_exit(NULL);
+    GDALAllRegister();
+
     char dirName[12];
-    char timestamp[22];
+    char timestampString[22];
 
     //takes the args and convert them to tm struct
     tm startDate = toTime(std::stringstream(argv[1]));
@@ -58,22 +67,23 @@ int main(int argc, char *argv[]) {
     int diffHours = (int) std::difftime(timegm(&endDate), timegm(&startDate)) / 3600;
     //register gdal driver and create the datasets
 
-    GDALAllRegister();
+
     GDALDataset *originalDataset;
     GDALDataset *newDataset;
     //option for the apply color to the tif file and set the alpha
     char *optionForDEM[] = {const_cast<char *>("-alpha"), nullptr};
     GDALDEMProcessingOptions *options = GDALDEMProcessingOptionsNew(optionForDEM, nullptr);
 
-    Magick::Image background;
-    Magick::Image za;
-    background.read(TEMP_PATH + "background.mpc");
-    za.read(TEMP_PATH + "/za.mpc");
 
+    VImage sfondo = VImage::new_from_file("/home/giovanni/CLionProjects/MappeIRPI-CNR/cmake-build-debug/italy.vips",
+                                          VImage::option()->set("access", VIPS_ACCESS_SEQUENTIAL));
+    VImage za = VImage::new_from_file("/home/giovanni/CLionProjects/MappeIRPI-CNR/cmake-build-debug/za.vips",
+                                      VImage::option()->set("access", VIPS_ACCESS_SEQUENTIAL));
+
+/**********************************************************************************************************************/
     time_t date;
-    int g;
-
-    startDate = toTime(std::stringstream(argv[1]));
+    int gdalReturnCode;
+//#pragma omp for private(gdalReturnCode, date)
     for (int j = 0; j < diffHours; ++j) {
         date = timegm(&startDate);
         strftime(dirName, 12, DIR_FORMAT.c_str(), gmtime(&date));
@@ -83,37 +93,29 @@ int main(int argc, char *argv[]) {
         newDataset = (GDALDataset *) GDALDEMProcessing((TEMP_PATH + std::to_string(j) + "cf_psm.tif").c_str(),
                                                        originalDataset,
                                                        "color-relief",
-                                                       COLORI.c_str(), options, &g);
+                                                       COLORI.c_str(), options, &gdalReturnCode);
         GDALClose(newDataset); //write the processed tif to disk
+        VImage frame = VImage::new_memory();
+        VImage tif = VImage::new_from_file((TEMP_PATH + std::to_string(j) + "cf_psm.tif").c_str(),
+                                           VImage::option()->set("access", VIPS_ACCESS_SEQUENTIAL));
+        tif = tif.resize(3);
+//        tif = tif.composite(tif, VIPS_BLEND_MODE_DEST_OVER);
+        tif = tif.composite(sfondo, VIPS_BLEND_MODE_DEST_OVER);
+        tif = tif.composite(za, VIPS_BLEND_MODE_OVER);
+
+
+//        strftime(timestampString, 12, DATE_FORMAT.c_str(), gmtime(&date));
+//        VImage timeStampImage = vips_image_new_memory();
+        tif.write_to_file((TEMP_PATH + std::to_string(j) + "EDITcf_psm.tif").c_str());
         startDate.tm_hour += 1;
     }
 
-    startDate = toTime(std::stringstream(argv[1]));
-#pragma omp ordered
-    for (int i = 0; i < diffHours; ++i) {
-        date = timegm(&startDate);
-        //start of gdal processing block
-        Magick::Image tif;
-        tif.read(std::to_string(i) + "cf_psm.tif");
-        tif.scale(Magick::Geometry(1082, 1166));
-//        add the background and the za
-//        i want to apply that to the final gif, not to every single photo
-        tif.composite(background, 0, 0, Magick::DstOverCompositeOp);
-        tif.composite(za, 0, 0, Magick::OverCompositeOp);
-        //options for annotate the frame
-        tif.font("/usr/share/fonts/OTF/SFMono-Bold.otf");
-        tif.fillColor("White");
-        tif.fontPointsize(37);
 
-        strftime(timestamp, 22, DATE_FORMAT.c_str(), gmtime(&date));
-        tif.annotate(timestamp, Magick::NorthEastGravity);
-        tif.write(TEMP_PATH + std::to_string(i) + "cf_psm.tif");
-        startDate.tm_hour += 1;
-    }
-
+/**********************************************************************************************************************
+*   close vips, gdal and free memory
+*/
+    vips_shutdown();
     GDALClose(originalDataset);
     GDALDEMProcessingOptionsFree(options);
-
-
     return 0;
 }
