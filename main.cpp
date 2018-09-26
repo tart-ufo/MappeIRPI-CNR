@@ -24,6 +24,7 @@ static std::string BASE_PATH = "/home/giovanni/Desktop/dati/";
 static std::string COLORI = "/home/giovanni/CLionProjects/MappeIRPI-CNR/colors.txt";
 static std::string BACKGROUND = "/home/giovanni/CLionProjects/MappeIRPI-CNR/background.vips";
 static std::string OVERLAY = "/home/giovanni/CLionProjects/MappeIRPI-CNR/overlay.vips";
+static std::string SFMONO = "/usr/share/fonts/OTF/SFMono-Bold.otf";
 
 /**
  * Converts UTC time string to a tm struct.
@@ -108,9 +109,9 @@ int main(int argc, char *argv[]) {
         strftime(timestampString, 22, DATE_FORMAT.c_str(), gmtime(&dateWip));
         //create new text image
         VImage testo = VImage::text(timestampString, VImage::option()->set("height", 25)
-                ->set("width", 945)
-                ->set("font", "SFmono")
-                ->set("fontfile", "/usr/share/fonts/OTF/SFMono-Bold.otf"));
+                                                                     ->set("width", 945)
+                                                                     ->set("font", "SFmono")
+                                                                     ->set("fontfile", SFMONO.c_str()));
         //overlay the text to the tif
         gdalTif = testo.composite(gdalTif, VIPS_BLEND_MODE_DEST_OVER);
         //write the image to disk
