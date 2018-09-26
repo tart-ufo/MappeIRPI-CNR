@@ -4,7 +4,6 @@
 #include <filesystem>
 #include <gdal_utils.h>
 #include <iostream>
-#include <omp.h>
 #include <vips/vips8>
 
 /**
@@ -19,13 +18,12 @@ using namespace vips;
 
 static std::string DIR_FORMAT = "%Y%m%d_%H";
 static std::string DATE_FORMAT = "%Y/%m/%d H%H UTF-0";
-static std::string O_FORMAT = "%Y%m%d_%H.tif";
 static std::string TEMP_PATH = "TEMP/";
 static std::string PREVISTE = "/cf_psm.tif";
 static std::string BASE_PATH = "/home/giovanni/Desktop/dati/";
 static std::string COLORI = "/home/giovanni/CLionProjects/MappeIRPI-CNR/colors.txt";
-static std::string SFONDO = "/home/giovanni/CLionProjects/MappeIRPI-CNR/sfondo.jpg";
-static std::string ZA = "/home/giovanni/CLionProjects/MappeIRPI-CNR/ZA.png";
+static std::string BACKGROUND = "/home/giovanni/CLionProjects/MappeIRPI-CNR/background.vips";
+static std::string OVERLAY = "/home/giovanni/CLionProjects/MappeIRPI-CNR/overlay.vips";
 
 /**
  * Converts UTC time string to a tm struct.
@@ -57,63 +55,70 @@ int main(int argc, char *argv[]) {
         vips_error_exit(NULL);
     GDALAllRegister();
 
-    char dirName[12];
-    char timestampString[22];
-
     //takes the args and convert them to tm struct
     tm startDate = toTime(std::stringstream(argv[1]));
     tm endDate = toTime(std::stringstream(argv[2]));
     //calc the time differenze
     int diffHours = (int) std::difftime(timegm(&endDate), timegm(&startDate)) / 3600;
-    //register gdal driver and create the datasets
-
 
     GDALDataset *originalDataset;
-    GDALDataset *newDataset;
+    GDALDataset *tempDataset;
     //option for the apply color to the tif file and set the alpha
     char *optionForDEM[] = {const_cast<char *>("-alpha"), nullptr};
     GDALDEMProcessingOptions *options = GDALDEMProcessingOptionsNew(optionForDEM, nullptr);
 
-
-    VImage sfondo = VImage::new_from_file("/home/giovanni/CLionProjects/MappeIRPI-CNR/cmake-build-debug/italy.vips",
-                                          VImage::option()->set("access", VIPS_ACCESS_SEQUENTIAL));
-    VImage za = VImage::new_from_file("/home/giovanni/CLionProjects/MappeIRPI-CNR/cmake-build-debug/za.vips",
-                                      VImage::option()->set("access", VIPS_ACCESS_SEQUENTIAL));
-
-/**********************************************************************************************************************/
-    time_t date;
-    int gdalReturnCode;
-//#pragma omp for private(gdalReturnCode, date)
-    for (int j = 0; j < diffHours; ++j) {
-        date = timegm(&startDate);
-        strftime(dirName, 12, DIR_FORMAT.c_str(), gmtime(&date));
-//        fs::create_directory(fs::path(TEMP_PATH + dirName));
-
-        originalDataset = (GDALDataset *) GDALOpen((BASE_PATH + dirName + PREVISTE).c_str(), GA_ReadOnly);
-        newDataset = (GDALDataset *) GDALDEMProcessing((TEMP_PATH + std::to_string(j) + "cf_psm.tif").c_str(),
-                                                       originalDataset,
-                                                       "color-relief",
-                                                       COLORI.c_str(), options, &gdalReturnCode);
-        GDALClose(newDataset); //write the processed tif to disk
-
-        VImage tif = VImage::new_from_file((TEMP_PATH + std::to_string(j) + "cf_psm.tif").c_str(),
+    //read background and overlay
+    VImage background = VImage::new_from_file(BACKGROUND.c_str(),
+                                              VImage::option()->set("access", VIPS_ACCESS_SEQUENTIAL));
+    VImage overlay = VImage::new_from_file(OVERLAY.c_str(),
                                            VImage::option()->set("access", VIPS_ACCESS_SEQUENTIAL));
 
-        tif = tif.resize(3, VImage::option()->set("kernel", VIPS_KERNEL_LINEAR));
-        tif = sfondo.composite(tif, VIPS_BLEND_MODE_OVER);
-        tif = tif.composite(za, VIPS_BLEND_MODE_OVER);
-        strftime(timestampString, 22, DATE_FORMAT.c_str(), gmtime(&date));
+/**********************************************************************************************************************
+ * Image manipulating block
+ */
+    time_t dateWip;
+    char dirName[12];
+    char timestampString[22];
+    int gdalReturnCode;
+    for (int j = 0; j < diffHours; ++j) {
+        //update the date for the next iteration
+        startDate.tm_hour += 1;
+        dateWip = timegm(&startDate);
+
+        /******************************************** gdal block ******************************************************/
+        strftime(dirName, 12, DIR_FORMAT.c_str(), gmtime(&dateWip));
+        originalDataset = (GDALDataset *) GDALOpen((BASE_PATH + dirName + PREVISTE).c_str(), GA_ReadOnly);
+        tempDataset = (GDALDataset *) GDALDEMProcessing((TEMP_PATH + std::to_string(j) + "cf_psm.tif").c_str(),
+                                                        originalDataset,
+                                                        "color-relief",
+                                                        COLORI.c_str(), options, &gdalReturnCode);
+        GDALClose(tempDataset); //write the processed gdalTif to disk
+
+        /******************************************* libvips block ****************************************************/
+        //open new generated tif
+        VImage gdalTif = VImage::new_from_file((TEMP_PATH + std::to_string(j) + "cf_psm.tif").c_str(),
+                                               VImage::option()->set("access", VIPS_ACCESS_SEQUENTIAL));
+        //resize the tif to 945x1015
+        gdalTif = gdalTif.resize(3, VImage::option()->set("kernel", VIPS_KERNEL_LINEAR));
+        //overlay the tif to the background
+        gdalTif = background.composite(gdalTif, VIPS_BLEND_MODE_OVER);
+        //overlay the "alert zones" to the tif
+        gdalTif = gdalTif.composite(overlay, VIPS_BLEND_MODE_OVER);
+        //format the string with proper date format
+        strftime(timestampString, 22, DATE_FORMAT.c_str(), gmtime(&dateWip));
+        //create new text image
         VImage testo = VImage::text(timestampString, VImage::option()->set("height", 25)
                 ->set("width", 945)
                 ->set("font", "SFmono")
                 ->set("fontfile", "/usr/share/fonts/OTF/SFMono-Bold.otf"));
-        tif = testo.composite(tif, VIPS_BLEND_MODE_DEST_OVER);
-        tif.write_to_file((TEMP_PATH + std::to_string(j) + "VIPScf_psm.tif").c_str());
-        startDate.tm_hour += 1;
+        //overlay the text to the tif
+        gdalTif = testo.composite(gdalTif, VIPS_BLEND_MODE_DEST_OVER);
+        //write to disk the image
+        gdalTif.write_to_file((TEMP_PATH + std::to_string(j) + "VIPS-cf_psm.jpg").c_str());
     }
 
 /**********************************************************************************************************************
-*   close vips, gdal and free memory
+* close vips, gdal and free memory
 */
     vips_shutdown();
     GDALClose(originalDataset);
