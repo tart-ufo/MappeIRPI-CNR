@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
                 ->set("fontfile", "/usr/share/fonts/OTF/SFMono-Bold.otf"));
         //overlay the text to the tif
         gdalTif = testo.composite(gdalTif, VIPS_BLEND_MODE_DEST_OVER);
-        //write to disk the image
+        //write the image to disk
         gdalTif.write_to_file((TEMP_PATH + std::to_string(j) + "VIPS-cf_psm.jpg").c_str());
     }
 
