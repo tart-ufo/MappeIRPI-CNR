@@ -10,7 +10,6 @@
 #include <fstream>
 #include "Configuration.h"
 
-
 /**
  * Generate colored, upscaled, temporized map, with the Italian alert zones
  * and an Italy background, animated Gifs.
@@ -106,56 +105,54 @@ int main(int argc, char *argv[]) {
     VImage marker = vips::VImage::new_from_file(conf.getMARKER());
 
     std::vector<std::string> mapNames;
-    std::vector<std::string> colorFiles;
-
     for (int i = 9; i < argc; ++i) {
-        std::string map(argv[i]);
-        mapNames.push_back(map);
-        // if the last character of the name is a number, to find the corresponding color file I have to delete it
-        while (isdigit(*map.rbegin())) {
-            map.pop_back();
-        }
-        map.append("-colors.txt");
-        colorFiles.push_back(map);
+        mapNames.push_back(std::string(argv[i]));
     }
 
-/**********************************************************************************************************************
- * Image manipulating block
- */
     std::string dayDir(argv[1]);
     dayDir.append(argv[2]);
     fs::create_directory(fs::path(conf.getTEMP_PATH() + dayDir));
 
-    std::string currentDir;
+    std::string currentBaseDir;
     char timestampString[23];
-    time_t dateWip;
+    time_t actualTime;
     char dateString[12];
     int gdalReturnCode;
-    std::string ffmpegCommand;
+    std::string colorFile;
 
-    for (int i = 0; i < mapNames.size(); ++i) {
+/**********************************************************************************************************************
+ * Image manipulating block
+ */
+    for (auto &map : mapNames) {
         // reset the startDate for next day
-        tm startDate = toTmStruct(std::stringstream(argv[1]), conf.getDIR_FORMAT());
-        currentDir = conf.getTEMP_PATH() + dayDir + "/" + mapNames.at(i);
-        fs::create_directory(fs::path(currentDir));
+        startDate = toTmStruct(std::stringstream(argv[1]), conf.getDIR_FORMAT());
+        currentBaseDir = conf.getTEMP_PATH() + dayDir + "/" + map;
+        fs::create_directory(fs::path(currentBaseDir));
+
+        // if the last character of the name is a number, to find the corresponding color file I have to delete it
+        colorFile = map;
+        while (isdigit(*colorFile.rbegin())) {
+            colorFile.pop_back();
+        }
+        colorFile.append("-colors.txt");
 
         for (int ora = 0; ora < diffHours; ++ora) {
-            dateWip = timegm(&startDate);
-            strftime(dateString, 12, conf.getDIR_FORMAT(), gmtime(&dateWip));
+            actualTime = timegm(&startDate);
+            strftime(dateString, 12, conf.getDIR_FORMAT(), gmtime(&actualTime));
 
             try {
                 /******************************************* gdal block *******************************************/
                 originalDataset = (GDALDataset *) GDALOpen(
-                        (conf.getBASE_PATH() + dateString + "/" + mapNames.at(i) + ".tif").c_str(), GA_ReadOnly);
+                        (conf.getBASE_PATH() + dateString + "/" + map + ".tif").c_str(), GA_ReadOnly);
                 tempDataset = (GDALDataset *) GDALDEMProcessing(
-                        (currentDir + "/" + std::to_string(ora) + mapNames.at(i) + ".tif").c_str(),
+                        (currentBaseDir + "/" + std::to_string(ora) + map + ".tif").c_str(),
                         originalDataset, "color-relief",
-                        colorFiles.at(i).c_str(), options, &gdalReturnCode);
+                        colorFile.c_str(), options, &gdalReturnCode);
                 GDALClose(tempDataset); //write the processed gdalTif to disk
 
                 /******************************************* libvips block ***************************************/
                 VImage tif = vips::VImage::new_from_file(
-                        (currentDir + "/" + std::to_string(ora) + mapNames.at(i) + ".tif").c_str(),
+                        (currentBaseDir + "/" + std::to_string(ora) + map + ".tif").c_str(),
                         VImage::option()->set("access", "sequential"));
                 tif = tif.resize(3.022222222, VImage::option()->set("kernel", VIPS_KERNEL_NEAREST));
                 VImage frame = background.composite2(tif, VIPS_BLEND_MODE_OVER);
@@ -164,7 +161,7 @@ int main(int argc, char *argv[]) {
                 /* we must make a unique string each time, or libvips will
                  * cache the result for us
                  */
-                strftime(timestampString, 22, conf.getDATE_FORMAT(), gmtime(&dateWip));
+                strftime(timestampString, 22, conf.getDATE_FORMAT(), gmtime(&actualTime));
                 VImage text = VImage::text(timestampString,
                                            VImage::option()->set("font", "SFmono 35")->set("fontfile", conf.getFONT()));
                 frame = draw_overlay(frame, text, 470, 10);
@@ -178,28 +175,31 @@ int main(int argc, char *argv[]) {
 //                                            marker_x - marker.width() / 2,
 //                                            marker_y - marker.height());
 
-                frame.write_to_file((currentDir + "/" + mapNames.at(i) + "VIPS_" + std::to_string(ora) + ".jpeg").c_str());
-                remove((currentDir + "/" + std::to_string(ora) + mapNames.at(i) + ".tif").c_str());
+                frame.write_to_file((currentBaseDir + "/" + std::to_string(ora) +".jpeg").c_str());
+                remove((currentBaseDir + "/" + std::to_string(ora) + map + ".tif").c_str());
 
             } catch (vips::VError &e) {
                 std::cerr << "MANCA UN GIORNO o c'è un problema con gli input per libvips:\n";
                 std::cout << e.what();
             }
-
-
-
             //update date for next iteration
             startDate.tm_hour += 1;
         }
-
+        std::string command;
+        //controlla l'argomento del formato
+        if(strcmp(argv[7], ".mp4") == 0){
+            command = "ffmpeg -r 1 -i %d.jpeg -r 10 -vcodec copy output.mp4";
+            system(command.c_str());
+        } else {
+            command = "convert -delay 15 *.jpeg output.gif";
+            system(command.c_str());
+        }
     }
-
 
 /**********************************************************************************************************************
 * close vips, gdal and free memory
 */
     vips_shutdown();
-
     GDALClose(originalDataset);
     GDALDEMProcessingOptionsFree(options);
     return 0;
