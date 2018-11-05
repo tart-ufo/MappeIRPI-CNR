@@ -9,8 +9,6 @@
 #include <string>
 #include <vector>
 
-
-
 class ArgvManager {
 public:
     ArgvManager(char *argv[]);

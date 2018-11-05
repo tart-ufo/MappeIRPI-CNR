@@ -20,7 +20,6 @@ namespace fs = std::filesystem;
 using namespace std::chrono;
 using namespace vips;
 
-
 /**
  * Converts UTC time string to a tm struct.
  * @param dateTime the string to convert
@@ -44,24 +43,38 @@ void to3857(double *x, double *y) {
     OGRCreateCoordinateTransformation(&sourceSRS, &targetSRS)->Transform(1, x, y);
 }
 
+/**
+ * Overlays two images by deleting the image page in the background where the overlay will go,
+ * and then using the method that adds the image where the other is not present
+ * @param background The background VImage
+ * @param overlay The overlay VImage
+ * @param x The x offset
+ * @param y The y offset
+ * @param ink
+ * @return
+ */
 static VImage
 draw_overlay(VImage background, VImage overlay, int x, int y, std::vector<double> ink = {255}) {
     // cut out the part of the background we modify
     VImage tile = background.extract_area(x, y, overlay.width(), overlay.height());
 
-    // Make a constant image the size of the overlay area containing the
-    // ink
+    // Make a constant image the size of the overlay area containing the ink
     VImage ink_image = overlay.new_from_image(ink);
 
-    // use the overlay as a mask to blend smoothly between the background
-    // and the ink
+    // use the overlay as a mask to blend smoothly between the background and the ink
     tile = overlay.ifthenelse(ink, tile, VImage::option()->set("blend", TRUE));
 
     // and insert the modified tile back into the image
     return background.insert(tile, x, y);
 }
 
-/* Composite a small image into a much larger one.
+/**
+ * Composite a small image into a much larger one. Will be used to insert the marker
+ * @param background the background where to superimpose the desired image
+ * @param glyph the glyph to be superimposed
+ * @param x the x coordinates
+ * @param y the x coordinates
+ * @return the new VImage with the superimposed glyph
  */
 static VImage
 composite_glyph(VImage background, VImage glyph, int x, int y) {
@@ -75,7 +88,6 @@ composite_glyph(VImage background, VImage glyph, int x, int y) {
     // and insert the modified tile back into the image
     return background.insert(tile, x, y);
 }
-
 
 int main(int argc, char *argv[]) {
     //init vips and register gdal driver
@@ -102,32 +114,38 @@ int main(int argc, char *argv[]) {
     //read background and overlay
     VImage background = VImage::new_from_file(conf.getBACKGROUND());
     VImage overlay = VImage::new_from_file(conf.getOVERLAY());
-    VImage marker = vips::VImage::new_from_file(conf.getMARKER());
+//    VImage marker = vips::VImage::new_from_file(conf.getMARKER());
 
     std::vector<std::string> mapNames;
     for (int i = 9; i < argc; ++i) {
         mapNames.push_back(std::string(argv[i]));
     }
 
-    std::string dayDir(argv[1]);
-    dayDir.append(argv[2]);
-    fs::create_directory(fs::path(conf.getTEMP_PATH() + dayDir));
+    // The path where goes all the files for the current elaboration
+    std::string elaborationDir(argv[1]);
+    elaborationDir.append(argv[2]);
+    fs::create_directory(fs::path(conf.getTEMP_PATH() + elaborationDir));
 
-    std::string currentBaseDir;
+    /******************************************* Image manipulating block ********************************************/
+
+    // The dir where goes the current day/map files
+    std::string currentNewFilesDir;
+    // The where take from the original TIFs
+    char currentOriginalDatasetDayDir[12];
+    // The buffer containing the timestamp
     char timestampString[23];
+    // The frame currently in working
     time_t actualTime;
-    char dateString[12];
+    // The return code of the gdal work. Debug Only
     int gdalReturnCode;
+    // The name of the file containing the color scale, changes each cycle.
     std::string colorFile;
 
-/**********************************************************************************************************************
- * Image manipulating block
- */
     for (auto &map : mapNames) {
         // reset the startDate for next day
         startDate = toTmStruct(std::stringstream(argv[1]), conf.getDIR_FORMAT());
-        currentBaseDir = conf.getTEMP_PATH() + dayDir + "/" + map;
-        fs::create_directory(fs::path(currentBaseDir));
+        currentNewFilesDir = conf.getTEMP_PATH() + elaborationDir + "/" + map;
+        fs::create_directory(fs::path(currentNewFilesDir));
 
         // if the last character of the name is a number, to find the corresponding color file I have to delete it
         colorFile = map;
@@ -138,21 +156,20 @@ int main(int argc, char *argv[]) {
 
         for (int ora = 0; ora < diffHours; ++ora) {
             actualTime = timegm(&startDate);
-            strftime(dateString, 12, conf.getDIR_FORMAT(), gmtime(&actualTime));
-
+            strftime(currentOriginalDatasetDayDir, 12, conf.getDIR_FORMAT(), gmtime(&actualTime));
             try {
                 /******************************************* gdal block *******************************************/
                 originalDataset = (GDALDataset *) GDALOpen(
-                        (conf.getBASE_PATH() + dateString + "/" + map + ".tif").c_str(), GA_ReadOnly);
+                        (conf.getBASE_PATH() + currentOriginalDatasetDayDir + "/" + map + ".tif").c_str(), GA_ReadOnly);
                 tempDataset = (GDALDataset *) GDALDEMProcessing(
-                        (currentBaseDir + "/" + std::to_string(ora) + map + ".tif").c_str(),
+                        (currentNewFilesDir + "/" + std::to_string(ora) + map + ".tif").c_str(),
                         originalDataset, "color-relief",
                         colorFile.c_str(), options, &gdalReturnCode);
                 GDALClose(tempDataset); //write the processed gdalTif to disk
 
                 /******************************************* libvips block ***************************************/
                 VImage tif = vips::VImage::new_from_file(
-                        (currentBaseDir + "/" + std::to_string(ora) + map + ".tif").c_str(),
+                        (currentNewFilesDir + "/" + std::to_string(ora) + map + ".tif").c_str(),
                         VImage::option()->set("access", "sequential"));
                 tif = tif.resize(3.022222222, VImage::option()->set("kernel", VIPS_KERNEL_NEAREST));
                 VImage frame = background.composite2(tif, VIPS_BLEND_MODE_OVER);
@@ -175,8 +192,8 @@ int main(int argc, char *argv[]) {
 //                                            marker_x - marker.width() / 2,
 //                                            marker_y - marker.height());
 
-                frame.write_to_file((currentBaseDir + "/" + std::to_string(ora) +".jpeg").c_str());
-                remove((currentBaseDir + "/" + std::to_string(ora) + map + ".tif").c_str());
+                frame.write_to_file((currentNewFilesDir + "/" + std::to_string(ora) + ".jpeg").c_str());
+                remove((currentNewFilesDir + "/" + std::to_string(ora) + map + ".tif").c_str());
 
             } catch (vips::VError &e) {
                 std::cerr << "MANCA UN GIORNO o c'è un problema con gli input per libvips:\n";
@@ -187,18 +204,16 @@ int main(int argc, char *argv[]) {
         }
         std::string command;
         //controlla l'argomento del formato
-        if(strcmp(argv[7], ".mp4") == 0){
-            command = "ffmpeg -r 1 -i %d.jpeg -r 10 -vcodec copy output.mp4";
+        if (strcmp(argv[7], ".mp4") == 0) {
+            command = "sh mp4.sh " + currentNewFilesDir + " " + argv[5] + " " + "output";
             system(command.c_str());
         } else {
-            command = "convert -delay 15 *.jpeg output.gif";
+            command = "sh gif.sh " + currentNewFilesDir + " " + argv[5] + " " + "output";
             system(command.c_str());
         }
     }
 
-/**********************************************************************************************************************
-* close vips, gdal and free memory
-*/
+    /************************************ close vips, gdal and free memory *******************************************/
     vips_shutdown();
     GDALClose(originalDataset);
     GDALDEMProcessingOptionsFree(options);
