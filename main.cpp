@@ -165,6 +165,10 @@ int main(int argc, char *argv[]) {
                         (currentNewFilesDir + "/" + std::to_string(ora) + map + ".tif").c_str(),
                         originalDataset, "color-relief",
                         colorFile.c_str(), options, &gdalReturnCode);
+                // If gdal return an error, print the code
+                if (gdalReturnCode != 1) {
+                    printf("Gdal return code: %d", gdalReturnCode);
+                }
                 GDALClose(tempDataset); //write the processed gdalTif to disk
 
                 /******************************************* libvips block ***************************************/
