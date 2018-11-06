@@ -6,6 +6,6 @@ The project consists in processing geoTiff images according to their color scale
 The service is accessible from the specific site, and allows you to view the data of the last 24h, a specific day, and ask directly for the creation of customized files.
 
 It is written in c ++, html and php.
-It requires ffmpeg for joining frames, and imageMagick for creating gifs.
+It requires ffmpeg for joining frames, and imageMagick for create gifs.
 
 More info on the wiki.
