@@ -51,7 +51,7 @@ void to3857(double *x, double *y) {
  * @param x The x offset
  * @param y The y offset
  * @param ink
- * @return
+ * @return The new VImage
  */
 static VImage
 draw_overlay(VImage background, VImage overlay, int x, int y, std::vector<double> ink = {255}) {
@@ -92,11 +92,16 @@ composite_glyph(VImage background, VImage glyph, int x, int y) {
 int main(int argc, char *argv[]) {
     //init vips and register gdal driver
     if (VIPS_INIT(argv[0]))
-        vips_error_exit(NULL);
+        vips_error_exit("non riesce ad inizializzare vips");
     GDALAllRegister();
     // Disable te libvips cache -- it won't help and will just burn memory.
     vips_cache_set_max(0);
 
+    int esitoChdir = chdir("/home/itts/mapCreator/");
+    if (esitoChdir != 0) {
+        std::cout << "Errore: accesso cartella di lavoro non riusto";
+        return 1;
+    }
     //load conf from the configuration file
     preferences conf(argv[3]);
 
@@ -114,7 +119,7 @@ int main(int argc, char *argv[]) {
     //read background and overlay
     VImage background = VImage::new_from_file(conf.getBACKGROUND());
     VImage overlay = VImage::new_from_file(conf.getOVERLAY());
-//    VImage marker = vips::VImage::new_from_file(conf.getMARKER());
+    VImage marker = vips::VImage::new_from_file(conf.getMARKER());
 
     std::vector<std::string> mapNames;
     for (int i = 9; i < argc; ++i) {
@@ -124,6 +129,7 @@ int main(int argc, char *argv[]) {
     // The path where goes all the files for the current elaboration
     std::string elaborationDir(argv[1]);
     elaborationDir.append(argv[2]);
+    std::cout << conf.getTEMP_PATH() << std::endl;
     fs::create_directory(fs::path(conf.getTEMP_PATH() + elaborationDir));
 
     /******************************************* Image manipulating block ********************************************/
@@ -147,7 +153,7 @@ int main(int argc, char *argv[]) {
         currentNewFilesDir = conf.getTEMP_PATH() + elaborationDir + "/" + map;
         fs::create_directory(fs::path(currentNewFilesDir));
 
-        // if the last character of the name is a number, to find the corresponding color file I have to delete it
+        // if the last character of the name is a number, to find the corresponding color file we have to delete it
         colorFile = map;
         while (isdigit(*colorFile.rbegin())) {
             colorFile.pop_back();
@@ -166,9 +172,9 @@ int main(int argc, char *argv[]) {
                         originalDataset, "color-relief",
                         colorFile.c_str(), options, &gdalReturnCode);
                 // If gdal return an error, print the code
-                if (gdalReturnCode != 1) {
-                    printf("Gdal return code: %d", gdalReturnCode);
-                }
+//                if (gdalReturnCode != 0) {
+//                    printf("\nGdal return code: %d", gdalReturnCode);
+//                }
                 GDALClose(tempDataset); //write the processed gdalTif to disk
 
                 /******************************************* libvips block ***************************************/
@@ -190,11 +196,11 @@ int main(int argc, char *argv[]) {
                 /*
                  * temporarily commented out for a future implementation of the markers obtained from the batabase
                  */
-//                    int marker_x = 100;
-//                    int marker_y = 300;
-//                    frame = composite_glyph(frame, marker,
-//                                            marker_x - marker.width() / 2,
-//                                            marker_y - marker.height());
+//                int marker_x = 100;
+//                int marker_y = 300;
+//                frame = composite_glyph(frame, marker,
+//                                        marker_x - marker.width() / 2,
+//                                        marker_y - marker.height());
 
                 frame.write_to_file((currentNewFilesDir + "/" + std::to_string(ora) + ".jpeg").c_str());
                 remove((currentNewFilesDir + "/" + std::to_string(ora) + map + ".tif").c_str());

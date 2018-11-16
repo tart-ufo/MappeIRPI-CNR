@@ -17,6 +17,7 @@ private:
     std::string MARKER;
     std::string FONT;
     std::string DIR_FORMAT;
+    std::string WORKING_DIR;
     std::string DATE_FORMAT;
 public:
     preferences(std::string);
@@ -29,6 +30,9 @@ public:
     const char* getFONT();
     const char* getDIR_FORMAT();
     const char* getDATE_FORMAT();
+    const char* getWORKING_DIR();
+
+    const std::string &getWORKING_DIR() const;
 };
 
 

@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS "-Wall ${CMAKE_CXX_FLAGS} -fopenmp -lstdc++fs ")
 SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -pg -g")
 SET(CMAKE_EXE_LINKER_FLAGS " ${CMAKE_EXE_LINKER_FLAGS}")
-set(SOURCE_FILES main.cpp Configuration.cpp Configuration.h)
+set(SOURCE_FILES main.cpp Configuration.cpp Configuration.h )
 add_executable(MappeIrpi ${SOURCE_FILES})
 
 FIND_PACKAGE(GDAL COMPONENTS REQUIRED)
