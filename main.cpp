@@ -117,9 +117,18 @@ int main(int argc, char *argv[]) {
     GDALDEMProcessingOptions *options = GDALDEMProcessingOptionsNew(optionForDEM, nullptr);
 
     //read background and overlay
-    VImage background = VImage::new_from_file(conf.getBACKGROUND());
-    VImage overlay = VImage::new_from_file(conf.getOVERLAY());
-    VImage marker = vips::VImage::new_from_file(conf.getMARKER());
+    VImage background;
+    VImage overlay;
+    VImage marker;
+    try {
+        //read background and overlay
+        background = VImage::new_from_file(conf.getBACKGROUND());
+        overlay = VImage::new_from_file(conf.getOVERLAY());
+//        marker = vips::VImage::new_from_file(conf.getMARKER());
+    } catch (vips::VError &e) {
+        std::cerr << "Non riesce ad aprire gli assets:\n";
+        std::cout << e.what();
+    }
 
     std::vector<std::string> mapNames;
     for (int i = 9; i < argc; ++i) {
@@ -129,7 +138,6 @@ int main(int argc, char *argv[]) {
     // The path where goes all the files for the current elaboration
     std::string elaborationDir(argv[1]);
     elaborationDir.append(argv[2]);
-    std::cout << conf.getTEMP_PATH() << std::endl;
     fs::create_directory(fs::path(conf.getTEMP_PATH() + elaborationDir));
 
     /******************************************* Image manipulating block ********************************************/
@@ -215,10 +223,10 @@ int main(int argc, char *argv[]) {
         std::string command;
         //controlla l'argomento del formato
         if (strcmp(argv[7], ".mp4") == 0) {
-            command = "sh mp4.sh " + currentNewFilesDir + " " + argv[5] + " " + "output";
+            command = "sh mp4.sh " + currentNewFilesDir + " " + argv[5] + " " + map;
             system(command.c_str());
         } else {
-            command = "sh gif.sh " + currentNewFilesDir + " " + argv[5] + " " + "output";
+            command = "sh gif.sh " + currentNewFilesDir + " " + argv[5] + " " + map;
             system(command.c_str());
         }
     }
